@@ -96,8 +96,8 @@ router.post('/api/insertCredito', middleware.validarJWT, (req: Request, res: Res
 
     const query = `
                     INSERT INTO creditos 
-                    ( id_cred, id_us, monto_cred, fecha_cred, plazo_cred, valorcuota_cred, estado_cred, comentario_cred )
-                    VALUES ( '${idCredito[0]}', ${req.body.idUs}, '${req.body.monto}', '${req.body.fecha}', ${req.body.plazo}, ${req.body.valorcuota}, 1, '${req.body.comentario}' ) `;
+                    ( id_cred, id_us, monto_cred, fecha_cred, periodo_cred, cantidad_cuo_cred, valorcuota_cred, estado_cred, comentario_cred )
+                    VALUES ( '${idCredito[0]}', ${req.body.idUs}, ${req.body.monto}, '${req.body.fecha}', '${req.body.periodo}', ${req.body.cantidad}, ${req.body.valorcuota}, 1, '${req.body.comentario}' ) `;
 
     MySQL.ejecutarQuery(query, (err: any, result: Object[]) => {
       if (err) {
