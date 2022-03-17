@@ -84,7 +84,7 @@ router.post('/api/insertUsuario', middleware.validarJWT, async(req: Request, res
 
 
 /**
- * Método POST para insertar inversiones 
+ * Método POST para insertar créditos 
  */
 router.post('/api/insertCredito', middleware.validarJWT, (req: Request, res: Response ) =>{
   
@@ -124,8 +124,49 @@ router.post('/api/insertCredito', middleware.validarJWT, (req: Request, res: Res
       error
     }); 
   }
-
 })
+
+
+/**
+ * Método POST para insertar mercancía
+*/
+router.post('/api/insertMercancia', middleware.validarJWT, (req: Request, res: Response ) =>{
+
+  try {
+    let idMercancia = uuidv4();
+    idMercancia = idMercancia.split('-');
+
+    const query = `
+                  INSERT INTO mercancia 
+                  ( id_merca, tipo_merca, marca_merca, genero_merca, talla_merca, cantidad_merca, valor_merca, fecha_merca, comentario_merca)
+                  VALUES ( '${idMercancia[0]}', '${req.body.tipo}', '${req.body.marca}', '${req.body.genero}', '${req.body.talla}', ${req.body.cantidad}, ${req.body.valor}, '${req.body.fecha}', '${req.body.comentario}' ) `;
+    
+    MySQL.ejecutarQuery(query, (err: any, result: Object[]) => {
+      if (err) {
+        return res.status(400).send({
+          ok: false,
+          msg: 'Problema al ingresar la mercancía.',
+          err: query
+        });
+      }
+      return res.status(200).send({
+        ok: true,
+        msg: 'Mercancía ingresada con éxito.',
+        idMercancia: idMercancia[0],
+        result
+      });
+    });
+
+  } catch (error) {
+    return res.status(500).send({
+      ok: false,
+      msg: 'Error inesperado en inserción... Revisar logs',
+      error
+    }); 
+  }
+});
+
+
 
 
 /**
