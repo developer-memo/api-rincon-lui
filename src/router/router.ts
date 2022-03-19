@@ -998,7 +998,41 @@ router.get('/api/usuariosInversion', middleware.validarJWT, ( req: Request, res:
     }
   })
 
-})
+});
+
+
+
+
+/**
+ *Método GET que obtiene toda la mercancía
+ */
+ router.get('/api/allMercancia', middleware.validarJWT, ( req: Request, res: Response ) =>{
+
+  try {
+    const query = `SELECT * FROM mercancia `;
+
+    MySQL.ejecutarQuery( query, (err:any, mercancia: Object[]) =>{
+      if ( err ) {
+        return res.status(400).send({
+          ok: false,
+          error: err
+        });
+
+      } else {
+        return res.status(200).send({
+          ok: true,
+          mercancia
+        })
+      }
+    })
+  } catch (error) {
+    return res.status(500).send({
+      ok: false,
+      msg: 'Error inesperado en inserción... Revisar logs',
+      error
+    }); 
+  }
+});
 
 
 
