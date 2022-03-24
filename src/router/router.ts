@@ -1038,6 +1038,34 @@ router.get('/api/usuariosInversion', middleware.validarJWT, ( req: Request, res:
 
 
 
+/**
+ *Método GET que obtiene la mercancía por id
+ */
+ router.get('/api/mercanciaById/:id', middleware.validarJWT, ( req: Request, res: Response ) =>{
+
+  const escapeId = MySQL.instance.cnn.escape(req.params.id);
+
+  const query = ` SELECT * FROM mercancia WHERE  id_merca = ${escapeId} `;
+
+  MySQL.ejecutarQuery( query, (err:any, mercaById: Object[]) =>{
+    if ( err ) {
+      return res.status(400).send({
+        ok: false,
+        error: err
+      });
+
+    } else {
+      return res.status(200).send({
+        ok: true,
+        mercaById
+      })
+    }
+  })
+
+})
+
+
+
 
 
 /*******************************************************************************************/
@@ -1322,6 +1350,56 @@ router.put('/api/updateIngreso', middleware.validarJWT, (req: Request, res: Resp
 
   });
 
+})
+
+
+
+/**
+ * Método PUT para actualizar mercancía por ID
+ */
+ router.put('/api/updateMercancia', middleware.validarJWT, (req: Request, res: Response ) =>{
+
+  try {
+
+    const query = `
+              UPDATE mercancia
+              SET tipo_merca = '${req.body.tipo}', marca_merca = '${req.body.marca}', genero_merca = '${req.body.genero}', talla_merca = '${req.body.talla}', cantidad_merca = ${req.body.cantidad}, valor_merca = ${req.body.valor}, fecha_merca = '${req.body.fecha}', comentario_merca = '${req.body.comentario}'
+              WHERE id_merca = '${req.body.id}' `;
+
+    MySQL.ejecutarQuery( query, (err:any, result:any) =>{
+
+      if ( err ) {
+        return res.status(400).send({
+          ok: false,
+          error: err
+        });
+
+      } 
+
+      if ( result.affectedRows == 0 ) {
+
+        return res.status(400).send({
+          ok: false,
+          msg: 'No es posible actualizar la mercancía. Inténtelo más tarde.',
+          error: err
+        });
+        
+      } else {
+        return res.status(200).send({
+          ok: true,
+          msg: 'Mercancía actualizada con éxito.',
+          result
+        });
+      }
+    });
+    
+  } catch (error) {
+    return res.status(500).send({
+      ok: false,
+      msg: 'Error inesperado... Revisar logs',
+      error
+    });
+  }
 })
 
 
