@@ -87,13 +87,9 @@ router.post('/api/insertUsuario', middleware.validarJWT, async(req: Request, res
  * Método POST para insertar créditos 
  */
 router.post('/api/insertCredito', middleware.validarJWT, (req: Request, res: Response ) =>{
-  
-  //Creditos.insertCredito(req, res);
-
   try {
     let idCredito = uuidv4();
     idCredito = idCredito.split('-');
-
     const query = `
                     INSERT INTO creditos 
                     ( id_cred, id_us, monto_cred, fecha_cred, periodo_cred, cantidad_cuo_cred, valorcuota_cred, estado_cred, comentario_cred )
@@ -106,7 +102,6 @@ router.post('/api/insertCredito', middleware.validarJWT, (req: Request, res: Res
           msg: 'Problema al crear el crédito.',
           err: query
         });
-
       }
       return res.status(200).send({
         ok: true,
@@ -114,7 +109,6 @@ router.post('/api/insertCredito', middleware.validarJWT, (req: Request, res: Res
         idCredito: idCredito[0],
         result
       });
-
     });
     
   } catch (error) {
@@ -165,6 +159,44 @@ router.post('/api/insertMercancia', middleware.validarJWT, (req: Request, res: R
     }); 
   }
 });
+
+
+
+/**
+ * Método POST para insertar mercancía al crédito
+ */
+ router.post('/api/insertCredimerca', middleware.validarJWT, (req: Request, res: Response ) =>{
+  try {
+    const query = `
+                    INSERT INTO credimerca 
+                    ( id_us_cm, id_merca_cm, mercancia_cm, fecha_cm, estado_cm )
+                    VALUES ( ${req.body.idUs}, '${req.body.idMerca}', '${req.body.mercancia}', CURRENT_TIMESTAMP(), 1 )`;
+
+    MySQL.ejecutarQuery(query, (err: any, result: Object[]) => {
+      if (err) {
+        return res.status(400).send({
+          ok: false,
+          msg: 'Problema al ingresar la mercancía. Inténtelo más tarde.',
+          err: query
+        });
+
+      }
+      return res.status(200).send({
+        ok: true,
+        msg: 'Mercanía ingresada al crédito con éxito.',
+        result
+      });
+
+    });
+    
+  } catch (error) {
+    return res.status(500).send({
+      ok: false,
+      msg: 'Error inesperado en inserción... Revisar logs',
+      error
+    }); 
+  }
+})
 
 
 
@@ -670,7 +702,7 @@ router.get('/api/pagos', middleware.validarJWT, ( req: Request, res: Response ) 
   try {
 
     const query = `
-                  SELECT T0.*, T1.monto_cred, T1.plazo_cred, T1.estado_cred, T2.nombre_us, T2.telefono_us, T2.email_us
+                  SELECT T0.*, T1.monto_cred, T1.periodo_cred, T1.estado_cred, T2.nombre_us, T2.telefono_us, T2.email_us
                   FROM pagos AS T0 INNER JOIN creditos AS T1 
                   ON T0.id_cred = T1.id_cred
                   INNER JOIN usuarios AS T2 ON T0.id_us = T2.id_us
@@ -714,10 +746,10 @@ router.get('/api/pagos/:idCredito', middleware.validarJWT, ( req: Request, res: 
     const escapeIdCredito = MySQL.instance.cnn.escape(req.params.idCredito);
 
     const query = `
-                  SELECT T0.nombre_us, T0.telefono_us, T0.email_us, T2.monto_cred, T2.plazo_cred, T2.estado_cred, T3.* 
+                  SELECT T0.nombre_us, T0.telefono_us, T0.email_us, T2.monto_cred, T2.periodo_cred, T2.estado_cred, T3.* 
                   FROM usuarios AS T0 INNER JOIN pagos AS T3 ON T0.id_us = T3.id_us
                   INNER JOIN creditos AS T2 ON T3.id_us = T2.id_us
-                  WHERE T3.id_cred = ${escapeIdCredito} GROUP by T3.id_pag ORDER BY T3.fecha_pag DESC `;
+                  WHERE T3.id_cred = ${escapeIdCredito} GROUP by T3.id_pag ORDER BY T3.fecha_pag DESC `;                  
 
     MySQL.ejecutarQuery( query, (err:any, pagos: Object[]) =>{
       if ( err ) {
@@ -1125,20 +1157,19 @@ router.put('/api/updateCliente', middleware.validarJWT, (req: Request, res: Resp
  * Método PUT para actualizar el crédito
  */
 router.put('/api/updateCredito', middleware.validarJWT, (req: Request, res: Response ) =>{
-
   //Creditos.updateCreditoById(req, res);
   try {
-
     const query = `
               UPDATE creditos
-              SET monto_cred = '${req.body.monto}', plazo_cred = ${req.body.plazo}, valorcuota_cred = ${req.body.valorcuota}, estado_cred = ${req.body.estado}, comentario_cred = '${req.body.comentario}'
-              WHERE id_cred = '${req.body.idCredito}' `;
+              SET monto_cred = ${req.body.monto}, periodo_cred = '${req.body.periodo}', valorcuota_cred = ${req.body.valorcuota}, estado_cred = ${req.body.estado}, comentario_cred = '${req.body.comentario}'
+              WHERE id_cred = '${req.body.idCredito}' `;              
 
     MySQL.ejecutarQuery( query, (err:any, result:any) =>{
 
       if ( err ) {
         return res.status(400).send({
           ok: false,
+          msg: 'No es posible actualizar el crédito. Inténtelo más tarde.',
           error: err
         });
 
@@ -1178,25 +1209,21 @@ router.put('/api/updateCredito', middleware.validarJWT, (req: Request, res: Resp
  * Método PUT para actualizar el pago
  */
 router.put('/api/updatePago', middleware.validarJWT, (req: Request, res: Response ) =>{
-
   //Pagos.updatePagosById(req, res);
   try {
-
     const query = `
               UPDATE pagos
               SET valor_pag = ${req.body.valor}, fecha_pag = '${req.body.fecha}', estado_pag = ${req.body.estado}, comentario_pag = '${req.body.comentario}'   
               WHERE id_pag = '${req.body.idPago}' `;
 
     MySQL.ejecutarQuery( query, (err:any, result:any) =>{
-
       if ( err ) {
         return res.status(400).send({
           ok: false,
+          msg: 'No es posible actualizar el pago. Inténtelo más tarde.',
           error: err
         });
-
       } 
-
       if ( result.affectedRows == 0 ) {
 
         return res.status(400).send({
@@ -1212,7 +1239,6 @@ router.put('/api/updatePago', middleware.validarJWT, (req: Request, res: Respons
           result
         });
       }
-
     });
     
   } catch (error) {
@@ -1264,8 +1290,6 @@ router.put('/api/uploadfile/:idInversion/:idAnexo/:id', [middleware.validarJWT, 
   }
 
 })
-
-
 
 
 
@@ -1411,9 +1435,46 @@ router.put('/api/updateIngreso', middleware.validarJWT, (req: Request, res: Resp
 /*******************************************************************************************/
 
 /**
+ * Método para eliminar usuario por id
+ */
+router.delete('/api/deleteUser/:id', middleware.validarJWT, (req: Request, res: Response ) =>{
+  try {
+    const escapeId = MySQL.instance.cnn.escape(req.params.id);
+    const query = `DELETE FROM usuarios WHERE id_us = ${escapeId}`;
+
+    MySQL.ejecutarQuery( query, (err:any, result: Object[]) =>{
+      if ( err ) {
+        return res.status(400).send({
+          ok: false,
+          msg: `No es posible eliminar el usuario. Inténtelo más tarde.`,
+          error: err
+        });
+
+      } else {
+        return res.status(200).send({
+          ok: true,
+          msg: `El usuario fue eliminado con éxito.`,
+          result
+        })
+      }
+    })
+  } catch (error) {
+    return res.status(500).send({
+      ok: false,
+      msg: 'Error inesperado en eliminación... Revisar logs',
+      error
+    }); 
+  }
+
+})
+
+
+
+
+/**
  * Método para eliminar ingresos por id
  */
-router.delete('/api/deleteIngreso/:idIngreso', middleware.validarJWT, (req: Request, res: Response ) =>{
+ router.delete('/api/deleteIngreso/:idIngreso', middleware.validarJWT, (req: Request, res: Response ) =>{
 
   try {
     const escapeId = MySQL.instance.cnn.escape(req.params.idIngreso);
@@ -1445,6 +1506,7 @@ router.delete('/api/deleteIngreso/:idIngreso', middleware.validarJWT, (req: Requ
   }
 
 })
+
 
 
 
@@ -1513,6 +1575,47 @@ router.delete('/api/deletearchivo/:extension/:archivo/:id', [middleware.validarJ
       })
     }
   })
+
+})
+
+
+
+/**
+ * Método para eliminar mercancía por id
+ */
+ router.delete('/api/deleteMercancia/:id', middleware.validarJWT, (req: Request, res: Response ) =>{
+
+  try {
+    const escapeId = MySQL.instance.cnn.escape(req.params.id);
+
+    const query = `DELETE FROM mercancia WHERE id_merca = ${escapeId}`;
+
+    console.log(query);
+    
+
+    MySQL.ejecutarQuery( query, (err:any, result: Object[]) =>{
+      if ( err ) {
+        return res.status(400).send({
+          ok: false,
+          msg: `No es posible eliminar la mercancía. Inténtelo más tarde.`,
+          error: err
+        });
+
+      } else {
+        return res.status(200).send({
+          ok: true,
+          msg: `La mercancía fue eliminada con éxito.`,
+          result
+        })
+      }
+    })
+  } catch (error) {
+    return res.status(500).send({
+      ok: false,
+      msg: 'Error inesperado en eliminación... Revisar logs',
+      error
+    }); 
+  }
 
 })
 
